@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Automated Unitary</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --green: #00ff9d;
+            --purple: #bf00ff;
+            --green-dim: #00ff9d33;
+            --purple-dim: #bf00ff33;
+            --bg: #080b0f;
+            --surface: #0d1117;
+            --surface2: #111720;
+            --border: #1e2d3d;
+            --text: #cdd9e5;
+            --text-dim: #546e7a;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            background-image:
+                    radial-gradient(ellipse at 10% 0%, #00ff9d0a 0%, transparent 50%),
+                    radial-gradient(ellipse at 90% 100%, #bf00ff0a 0%, transparent 50%);
+        }
+
+        /* Scanline effect */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(0,0,0,0.03) 2px,
+                    rgba(0,0,0,0.03) 4px
+            );
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        .header {
+            background: var(--surface);
+            padding: 18px 40px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-left { display: flex; align-items: center; gap: 16px; }
+
+        .logo-icon {
+            width: 40px; height: 40px;
+            background: linear-gradient(135deg, var(--green), var(--purple));
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 0 20px #00ff9d44;
+        }
+
+        .header h1 {
+            font-family: 'Fira Code', monospace;
+            font-size: 20px;
+            font-weight: 600;
+            background: linear-gradient(90deg, var(--green), var(--purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-sub {
+            font-family: 'Fira Code', monospace;
+            font-size: 11px;
+            color: var(--text-dim);
+        }
+
+        .header-sub span { color: var(--green); }
+
+        .lang-btn {
+            font-family: 'Fira Code', monospace;
+            background: transparent;
+            color: var(--text-dim);
+            border: 1px solid var(--border);
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .lang-btn:hover {
+            border-color: var(--green);
+            color: var(--green);
+            box-shadow: 0 0 10px var(--green-dim);
+        }
+
+        .container { max-width: 1100px; margin: 40px auto; padding: 0 24px; }
+
+        .card {
+            background: var(--surface);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--green), transparent);
+            opacity: 0.4;
+        }
+
+        .card-label {
+            font-family: 'Fira Code', monospace;
+            font-size: 10px;
+            color: var(--green);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-label::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, var(--border), transparent);
+        }
+
+        .type-selector { display: flex; gap: 10px; flex-wrap: wrap; }
+
+        .type-btn {
+            font-family: 'Fira Code', monospace;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+            padding: 10px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .type-btn:hover {
+            border-color: var(--purple);
+            color: var(--purple);
+            box-shadow: 0 0 12px var(--purple-dim);
+        }
+
+        .type-btn.active {
+            border-color: var(--green);
+            color: var(--green);
+            background: var(--green-dim);
+            box-shadow: 0 0 16px var(--green-dim);
+        }
+
+        .code-input {
+            width: 100%;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            color: #a8d8a8;
+            font-size: 13px;
+            font-family: 'Fira Code', monospace;
+            resize: vertical;
+            min-height: 220px;
+            line-height: 1.7;
+            transition: border-color 0.2s;
+        }
+
+        .code-input:focus {
+            outline: none;
+            border-color: var(--green);
+            box-shadow: 0 0 0 3px var(--green-dim);
+        }
+
+        .divider {
+            text-align: center;
+            margin: 14px 0;
+            font-family: 'Fira Code', monospace;
+            font-size: 11px;
+            color: var(--text-dim);
+            position: relative;
+        }
+
+        .divider::before, .divider::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 42%;
+            height: 1px;
+            background: var(--border);
+        }
+
+        .divider::before { left: 0; }
+        .divider::after { right: 0; }
+
+        .upload-area {
+            border: 1px dashed var(--border);
+            border-radius: 8px;
+            padding: 18px;
+            text-align: center;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .upload-area:hover {
+            border-color: var(--purple);
+            background: var(--purple-dim);
+        }
+
+        .upload-area label {
+            cursor: pointer;
+            font-family: 'Fira Code', monospace;
+            color: var(--purple);
+            font-size: 13px;
+        }
+
+        .upload-area input[type="file"] { display: none; }
+
+        .btn {
+            width: 100%;
+            margin-top: 16px;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            background: linear-gradient(135deg, var(--green), #00ccaa);
+            color: #080b0f;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+            transition: left 0.4s;
+        }
+
+        .btn:hover::before { left: 100%; }
+        .btn:hover { box-shadow: 0 0 25px #00ff9d55; transform: translateY(-1px); }
+
+        .result-box {
+            background: var(--bg);
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid var(--border);
+            position: relative;
+        }
+
+        .result-box pre {
+            color: #a8d8a8;
+            font-family: 'Fira Code', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            word-break: break-word;
+            line-height: 1.7;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 12px; right: 12px;
+            font-family: 'Fira Code', monospace;
+            background: var(--surface2);
+            color: var(--text-dim);
+            border: 1px solid var(--border);
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            border-color: var(--green);
+            color: var(--green);
+            box-shadow: 0 0 10px var(--green-dim);
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-family: 'Fira Code', monospace;
+            font-size: 11px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            margin-bottom: 14px;
+            border: 1px solid var(--green);
+            color: var(--green);
+            background: var(--green-dim);
+        }
+
+        .badge::before { content: '●'; font-size: 8px; animation: blink 1.5s infinite; }
+
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+        .error {
+            font-family: 'Fira Code', monospace;
+            font-size: 13px;
+            color: #ff6b6b;
+            background: #ff000015;
+            border: 1px solid #ff000044;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-top: 12px;
+        }
+
+        .error::before { content: '✗ '; }
+
+        #fileName {
+            font-family: 'Fira Code', monospace;
+            font-size: 12px;
+            color: var(--purple);
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-left">
+        <div class="logo-icon">🧪</div>
+        <div>
+            <h1>Automated Unitary</h1>
+            <p class="header-sub t" data-es="// generador de tests con IA" data-en="// AI-powered test generator"></p>
+        </div>
+    </div>
+    <button class="lang-btn" onclick="toggleLang()">🌐 English</button>
+</div>
+
+<div class="container">
+
+    <div class="card">
+        <div class="card-label t" data-es="01 // selecciona el tipo de test" data-en="01 // select test type">01 // selecciona el tipo de test</div>
+        <div class="type-selector">
+            <button class="type-btn active" onclick="selectType('unit', this)" data-es="[ JUnit ] Tests Unitarios" data-en="[ JUnit ] Unit Tests">[ JUnit ] Tests Unitarios</button>
+            <button class="type-btn" onclick="selectType('integration', this)" data-es="[ Spring ] Tests de Integración" data-en="[ Spring ] Integration Tests">[ Spring ] Tests de Integración</button>
+            <button class="type-btn" onclick="selectType('plain', this)" data-es="[ QA ] Casos de Prueba" data-en="[ QA ] Test Cases">[ QA ] Casos de Prueba</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-label t" data-es="02 // pega o sube tu código java" data-en="02 // paste or upload your java code">02 // pega o sube tu código java</div>
+        <form action="/generate" method="post" enctype="multipart/form-data" id="mainForm">
+            <input type="hidden" name="testType" id="testTypeInput" value="unit"/>
+            <textarea class="code-input t" name="code" id="codeArea"
+                      data-es="// Pega aquí tu código Java..."
+                      data-en="// Paste your Java code here..."></textarea>
+            <div class="divider t" data-es="or upload file" data-en="or upload file">or upload file</div>
+            <div class="upload-area">
+                <label for="fileInput" class="t" data-es=" Seleccionar archivo .java" data-en="Select .java file"> Seleccionar archivo .java</label>
+                <input type="file" id="fileInput" name="file" accept=".java" onchange="handleFile(this)"/>
+                <p id="fileName"></p>
+            </div>
+            <button class="btn t" type="submit" data-es="⚡ Generar Tests con IA" data-en="⚡ Generate Tests with AI">⚡ Generar Tests con IA</button>
+        </form>
+        <div class="error" th:if="${error}" th:text="${error}"></div>
+    </div>
+
+    <div class="card" th:if="${result}">
+        <div class="card-label t" data-es="03 // tests generados" data-en="03 // generated tests">03 // tests generados</div>
+        <div th:if="${testType == 'unit'}" class="badge">JUnit 5 Unit Tests</div>
+        <div th:if="${testType == 'integration'}" class="badge">Spring Boot Integration Tests</div>
+        <div th:if="${testType == 'plain'}" class="badge">QA Test Cases</div>
+        <div class="result-box">
+            <button class="copy-btn t" onclick="copyResult()" data-es=" copiar" data-en=" copy"> copiar</button>
+            <pre id="resultContent" th:text="${result}"></pre>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    let currentLang = localStorage.getItem('lang') || 'es';
+
+    function selectType(type, btn) {
+        document.getElementById('testTypeInput').value = type;
+        document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    }
+
+    function handleFile(input) {
+        const file = input.files[0];
+        document.getElementById('fileName').textContent = file ? '> ' + file.name : '';
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = e => document.getElementById('codeArea').value = e.target.result;
+            reader.readAsText(file);
+        }
+    }
+
+    function copyResult() {
+        const text = document.getElementById('resultContent').textContent;
+        navigator.clipboard.writeText(text).then(() => {
+            const btn = document.querySelector('.copy-btn');
+            const original = btn.textContent;
+            btn.textContent = ' copiado!';
+            setTimeout(() => btn.textContent = original, 2000);
+        });
+    }
+
+    function applyLang(lang) {
+        currentLang = lang;
+        localStorage.setItem('lang', lang);
+        document.querySelectorAll('.t').forEach(el => {
+            const text = el.getAttribute('data-' + lang);
+            if (!text) return;
+            if (el.tagName === 'TEXTAREA') el.placeholder = text;
+            else if (!el.hasAttribute('th:text')) el.textContent = text;
+        });
+        document.querySelector('.lang-btn').textContent = lang === 'es' ? '🌐 English' : '🌐 Español';
+    }
+
+    function toggleLang() { applyLang(currentLang === 'es' ? 'en' : 'es'); }
+
+    applyLang(currentLang);
+</script>
+</body>
+</html>
